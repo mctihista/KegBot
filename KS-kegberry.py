@@ -18,15 +18,13 @@ import pygame, sys
 from pygame.locals import *
 import RPi.GPIO as GPIO
 from flowmeter import *
-from tempsensor import *
 from beerinfo import *
 
 
 # GPIO Setup ===================================================================================================================
 GPIO.setmode(GPIO.BCM) # use real GPIO numbering
 GPIO.setup(23,GPIO.IN, pull_up_down=GPIO.PUD_UP) # Left Tap, Beer 1
-GPIO.setup(24,GPIO.IN, pull_up_down=GPIO.PUD_UP) # Middle Tap, Beer 2
-GPIO.setup(25,GPIO.IN, pull_up_down=GPIO.PUD_UP) # Right Tap, Beer 3
+GPIO.setup(24,GPIO.IN, pull_up_down=GPIO.PUD_UP) # Right Tap, Beer 2
 # Flow Meter Wiring: Red = 5-24VDC, Black = Ground, Yellow = GPIO Pin
 
 
@@ -44,8 +42,7 @@ pygame.mouse.set_visible(False)
 
 # Flow Meters Setup ============================================================================================================
 flowMeter1 = FlowMeter('gallon') # Left Tap, Beer 1
-flowMeter2 = FlowMeter('gallon') # Middle Tap, Beer 2
-flowMeter3 = FlowMeter('gallon') # Right Tap, Beer 3
+flowMeter2 = FlowMeter('gallon') # Right Tap, Beer 2
 # Inputs - FlowMeter('displayFormat')
 					# displayFormat (select ONE): liter, pint, gallon
 				
@@ -55,8 +52,7 @@ flowMeter3 = FlowMeter('gallon') # Right Tap, Beer 3
 with open(FILENAME,'r') as f:
 	lines = f.readlines()
 	flowMeter1.totalPour = float(lines[0]) * 3.7854
-	flowMeter2.totalPour = float(lines[1]) * 3.7854
-	flowMeter3.totalPour = float(lines[2]) * 3.7854
+	flowMeter2.totalPour = float(lines[2]) * 3.7854
 f.closed
 
 
@@ -72,7 +68,7 @@ ORANGE = (255,128,0)
 # Text Backgroud Color for each beer
 BEER1Bg = None
 BEER2Bg = None
-BEER3Bg = None
+
 
 
 # Window Surface Setup =========================================================================================================
@@ -89,7 +85,7 @@ background = pygame.image.load('Beer-Background.jpg')
 
 # Rendering ====================================================================================================================
 # Text Formating - https://pygame-zero.readthedocs.io/en/latest/ptext.html
-def renderThings(flowMeter1, flowMeter2, flowMeter3, screen, 
+def renderThings(flowMeter1, flowMeter2, screen, 
 	pint, mug, pilsner, weizen, tulip, snifter, goblet, teku, stange,
 	beer1name, beer1srm, beer1style, beer1OG, beer1ibu, beer1abv, beer1glasspic, beer1textcolor,
 	beer2name, beer2srm, beer2style, beer2OG, beer2ibu, beer2abv, beer2glasspic, beer2textcolor,
@@ -149,7 +145,7 @@ def renderThings(flowMeter1, flowMeter2, flowMeter3, screen,
 	screen.blit(beer1glasspic, (0, 325))
 
 	
-	# Beer 2 Details - Middle Tap ==============================================================================================
+	# Beer 2 Details - Right Tap ==============================================================================================
 	# Center Justified
 	
 	# Beer 2 Tap
@@ -198,62 +194,6 @@ def renderThings(flowMeter1, flowMeter2, flowMeter3, screen,
 	# Beer 2 Glass
 	screen.blit(beer2glasspic, (((VIEW_WIDTH / 2) - (rendered.get_rect().width / 2)), 325))
 	
-	# Beer 3 Details - Right Tap ===============================================================================================
-	# Right Justified
-	
-	# Beer 3 Tap
-	screenfont = pygame.font.SysFont(None, 60)
-	rendered = screenfont.render("Right Tap", True, beer3textcolor, BEER3Bg)
-	screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 0))
-	
-	# Beer 3 Poured
-	screenfont.set_underline(1)
-	if flowMeter3.enabled:
-		rendered = screenfont.render(flowMeter3.getFormattedTotalPour() + " / 5.0 gal", True, beer3textcolor, BEER3Bg)
-		screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 60))
-	screenfont.set_underline(0)
-				
-	# Beer 3 Name
-	screenfont = pygame.font.SysFont(None, 40)
-	rendered = screenfont.render(beer3name, True, beer3textcolor, BEER3Bg)
-	screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 120))
-		
-	# Beer 3 SRM (Color) Line Separator
-	pygame.draw.rect(screen, beer3srm, [(VIEW_WIDTH - rendered.get_rect().width),158,256,20])
-	#screenfont = pygame.font.SysFont(None, 20)
-	#rendered = screenfont.render('================================', True, beer3textcolor, BEER3Bg)
-	#screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 160))
-		
-	# Beer 3 Style
-	screenfont = pygame.font.SysFont(None, 35)
-	rendered = screenfont.render(beer3style, True, beer3textcolor, BEER3Bg)
-	screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 185))
-	
-	# Beer 3 Original Gravity (OG)
-	screenfont = pygame.font.SysFont(None, 35)
-	rendered = screenfont.render(beer3OG, True, beer3textcolor, BEER3Bg)
-	screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 220))
-	
-	# Beer 3 International Bittering Units (IBU)
-	screenfont = pygame.font.SysFont(None, 35)
-	rendered = screenfont.render(beer3ibu, True, beer3textcolor, BEER3Bg)
-	screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 255))
-	
-	# Beer 3 Alcohol / Volume (ABV)
-	screenfont = pygame.font.SysFont(None, 35)
-	rendered = screenfont.render(beer3abv, True, beer3textcolor, BEER3Bg)
-	screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 290))
-	
-	# Beer 3 Glass
-	screen.blit(beer3glasspic, ((VIEW_WIDTH - rendered.get_rect().width), 325))
-
-	
-	# Kegerator Temps ===========================================================================================================
-	# Using Pin 4
-	# Left Justified	
-	screenfont = pygame.font.SysFont(None, 35)
-	rendered = screenfont.render("Kegerator Temp: " + str(round(read_temp(),1)) + " F", True, WHITE, BLACK)
-	screen.blit(rendered, ((VIEW_WIDTH - rendered.get_rect().width), 575))
 			
 	
 	# Date / Time ==============================================================================================================
@@ -283,16 +223,9 @@ def doAClick2(channel):
 		flowMeter2.update(currentTime)
 		saveValues(flowMeter1, flowMeter2, flowMeter3)
 
-# Beer 3, on Pin 25.
-def doAClick3(channel):
-	currentTime = int(time.time() * FlowMeter.MS_IN_A_SECOND)
-	if flowMeter3.enabled == True:
-		flowMeter3.update(currentTime)
-		saveValues(flowMeter1, flowMeter2, flowMeter3)
 
 GPIO.add_event_detect(23, GPIO.RISING, callback=doAClick1, bouncetime=20) # Beer 1, on Pin 23
 GPIO.add_event_detect(24, GPIO.RISING, callback=doAClick2, bouncetime=20) # Beer 2, on Pin 24
-GPIO.add_event_detect(25, GPIO.RISING, callback=doAClick3, bouncetime=20) # Beer 3, on Pin 24
 
 
 # Erase & Save New Data to File +===============================================================================================
@@ -302,8 +235,6 @@ def saveValues(flowMeter1, flowMeter2, flowMeter3):
 		f.write(flowMeter1.getFormattedTotalPour() + "\n")
 	if flowMeter2.enabled == True:
 		f.write(flowMeter2.getFormattedTotalPour() + "\n")
-	if flowMeter3.enabled == True:
-		f.write(flowMeter3.getFormattedTotalPour() + "\n")
 	f.close()
 
 
@@ -319,14 +250,10 @@ while True:
 			flowMeter1.enabled = not(flowMeter1.enabled)
 		elif event.type == KEYUP and event.key == K_2:
 			flowMeter2.enabled = not(flowMeter2.enabled)
-		elif event.type == KEYUP and event.key == K_3:
-			flowMeter3.enabled = not(flowMeter3.enabled)
 		elif event.type == KEYUP and event.key == K_8:
 			flowMeter1.clear()
 		elif event.type == KEYUP and event.key == K_9:
 			flowMeter2.clear()
-		elif event.type == KEYUP and event.key == K_0:
-			flowMeter3.clear()
   	currentTime = int(time.time() * FlowMeter.MS_IN_A_SECOND)
 
 	# Update the screen
